@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>webAss</title>
+  <script src="scripts/wasm_exec.js"></script>
+  <script src="scripts/load_web_asm.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <main>
+    <h1>WebAssembly Image Effects</h1>
+    <div id="menu">
+      <select name="" id="select-effect">
+        <option value="gaussianBlur">gaussianBlur</option>
+        <option value="blur">blur</option>
+        <option value="dilate">dilate</option>
+        <option value="edgeDetection">edgeDetection</option>
+        <option value="emboss">emboss</option>
+        <option value="erode">erode</option>
+        <option value="grayscale">grayscale</option>
+        <option value="invert">invert</option>
+        <option value="median">median</option>
+        <option value="sepia">sepia</option>
+        <option value="sharpen">sharpen</option>
+        <option value="sobale">sobale</option>
+        <option value="ascii" selected>ascii</option>
+      </select>
+      <label class="file-input">
+
+        <input type="file" id="input-file">
+        </label>
+
+      <input type="range" value="100" min="50" max="200" id="input-range">
+    </div>
+
+    <div class="images">
+      <img src="" alt="" id="img">
+      <pre
+        style=" overflow-x: auto; font-size: 7px; line-height: 6px; font-family: 'Courier New', Courier, monospace; white-space: pre;"
+        id="ascii-art">
+      </pre>
+    </div>
+  </main>
+</body>
+
+</html>
