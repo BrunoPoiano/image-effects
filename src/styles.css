@@ -150,12 +150,16 @@ form {
 	}
 }
 
+section {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 1rem;
+}
+
 #menu {
-	display: flex;
-	align-items: start;
-	flex-wrap: wrap;
+	display: grid;
+	align-content: start;
 	gap: 0.7rem;
-	margin-bottom: 1.2rem;
 }
 
 .images {
@@ -163,6 +167,7 @@ form {
 	place-items: center;
 	gap: 0.5rem;
 	overflow: auto;
+  min-height: max(20rem, 100%);
 
 	span {
 		display: none;
@@ -203,6 +208,19 @@ form {
 		font-weight: 600;
 	}
 }
+
+.menu-item-checkbox {
+	display: flex;
+	gap: 0.3rem;
+
+	label {
+		font-weight: 600;
+	}
+  input{
+    width: 2rem;
+  }
+}
+
 
 .file-input {
 	display: inline-block;
@@ -257,6 +275,16 @@ input[type="range"]::-ms-fill-lower {
 
 input[type="range"]::-ms-fill-upper {
 	background-color: var(--primary-color);
+}
+
+
+
+#ascii-art {
+	overflow-x: auto;
+	font-size: 7px;
+	line-height: 5px;
+	font-family: "Courier New", Courier, monospace;
+	white-space: pre;
 }
 
 @media (prefers-reduced-motion: no-preference) {

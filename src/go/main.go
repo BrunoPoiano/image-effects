@@ -20,18 +20,23 @@ type model struct {
 	imageWidth     string
 	effectSelected string
 	effectRange    string
+	checkAscii     bool
 	imageSelected  js.Value
 	global         js.Value
 	document       js.Value
+	effectsRateMap map[string]bool
 }
 
 func main() {
 	println("ContentLoaded")
+
 	g := js.Global()
 	m := &model{
 		imageWidth:     "100",
 		effectRange:    "3",
 		effectSelected: "ascii",
+		checkAscii:     false,
+		effectsRateMap: effectsRateMapFunc(),
 		global:         g,
 		document:       g.Get("document"),
 	}
@@ -45,10 +50,38 @@ func main() {
 	m.document.Call("getElementById", "input-effect-range").
 		Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
 
+	m.document.Call("getElementById", "input-checkbox-ascii").
+		Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
+
 	m.document.Call("getElementById", "input-file").
 		Call("addEventListener", "input", js.FuncOf(m.fileChange))
 
 	select {}
+}
+
+func effectsRateMapFunc() map[string]bool {
+	effects := []string{"gaussianBlur", "blur", "Dilate", "edgeDetection", "erode", "median"}
+	effectsMap := make(map[string]bool)
+	for _, effect := range effects {
+		effectsMap[effect] = true
+	}
+
+	return effectsMap
+}
+
+func (m *model) inputAsciiCheckboxChange(this js.Value, args []js.Value) interface{} {
+	m.checkAscii = this.Get("checked").Bool()
+
+	inputZoomRangeDiv := m.document.Call("getElementById", "input-zoom-range-div")
+	dataVisible := "false"
+
+	if m.checkAscii {
+		dataVisible = "true"
+	}
+	changeAttribute(inputZoomRangeDiv, "data-visible", dataVisible)
+
+	m.changeImage()
+	return nil
 }
 
 func (m *model) fileChange(this js.Value, args []js.Value) interface{} {
@@ -64,13 +97,15 @@ func (m *model) fileChange(this js.Value, args []js.Value) interface{} {
 
 func (m *model) effectChange(this js.Value, args []js.Value) interface{} {
 	m.effectSelected = args[0].Get("target").Get("value").String()
-	inputZoomRangeDiv := m.document.Call("getElementById", "input-zoom-range-div")
+
+	inputRateRangeDiv := m.document.Call("getElementById", "input-rate-range-div")
 	dataVisible := "false"
 
-	if m.effectSelected == "ascii" {
+	if m.effectsRateMap[m.effectSelected] {
 		dataVisible = "true"
 	}
-	changeAttribute(inputZoomRangeDiv, "data-visible", dataVisible)
+
+	changeAttribute(inputRateRangeDiv, "data-visible", dataVisible)
 
 	m.changeImage()
 	return nil
@@ -133,18 +168,16 @@ func (m *model) changeImage() {
 			return nil
 		}
 
-		switch m.effectSelected {
+		value, _ := strconv.ParseFloat(m.effectRange, 64)
+		imgWithEffects := applyEffects(img, m.effectSelected, value)
 
-		case "ascii":
+		if m.checkAscii {
 			value, _ := strconv.Atoi(m.imageWidth)
-
-			println("asciiGenerator")
-			m.asciiGenerator(img, value)
-		default:
-
-			println("imageEffectGenerator")
-			m.imageEffectGenerator(img)
+			m.asciiGenerator(imgWithEffects, value)
+		} else {
+			m.imageEffectGenerator(imgWithEffects)
 		}
+
 		onLoad.Release()
 		changeAttribute(contentDiv, "data-loading", "false")
 		return nil
@@ -155,12 +188,9 @@ func (m *model) changeImage() {
 }
 
 func (m *model) imageEffectGenerator(img image.Image) {
-	value, _ := strconv.ParseFloat(m.effectRange, 64)
-	println(value)
-	result := applyEffects(img, m.effectSelected, value)
 
 	var buf bytes.Buffer
-	png.Encode(&buf, result)
+	png.Encode(&buf, img)
 
 	data := buf.Bytes()
 
@@ -225,8 +255,8 @@ func resizeImg(img image.Image, newWidth int) image.Image {
 }
 
 func (m *model) asciiGenerator(img image.Image, width int) {
-
-	density := []rune("Ñ@#W$9876543210?!abc;:+=-,._ ")
+	density := []rune("@%#*+=-:. ")
+	//density := []rune("Ñ@#W$9876543210?!abc;:+=-,._ ")
 
 	resul := resizeImg(img, width)
 	bounds := resul.Bounds()
