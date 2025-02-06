@@ -16,72 +16,104 @@ import (
 	"github.com/anthonynsimon/bild/transform"
 )
 
-var imageWidth string = "100"
-var effectSelected string = "ascii"
-var imageSelected js.Value
-var global = js.Global()
-var document = global.Get("document")
+type model struct {
+	imageWidth     string
+	effectSelected string
+	effectRange    string
+	imageSelected  js.Value
+	global         js.Value
+	document       js.Value
+}
 
 func main() {
 	println("ContentLoaded")
+	g := js.Global()
+	m := &model{
+		imageWidth:     "100",
+		effectRange:    "3",
+		effectSelected: "ascii",
+		global:         g,
+		document:       g.Get("document"),
+	}
 
-	document.Call("getElementById", "input-range").
-		Call("addEventListener", "input", js.FuncOf(rangeChange))
+	m.document.Call("getElementById", "input-zoom-range").
+		Call("addEventListener", "input", js.FuncOf(m.inputZoomRangeChange))
 
-	document.Call("getElementById", "select-effect").
-		Call("addEventListener", "input", js.FuncOf(effectChange))
+	m.document.Call("getElementById", "select-effect").
+		Call("addEventListener", "input", js.FuncOf(m.effectChange))
 
-	document.Call("getElementById", "input-file").
-		Call("addEventListener", "input", js.FuncOf(fileChange))
+	m.document.Call("getElementById", "input-effect-range").
+		Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
+
+	m.document.Call("getElementById", "input-file").
+		Call("addEventListener", "input", js.FuncOf(m.fileChange))
 
 	select {}
 }
 
-func fileChange(this js.Value, args []js.Value) interface{} {
+func (m *model) fileChange(this js.Value, args []js.Value) interface{} {
 	files := args[0].Get("target").Get("files")
 
 	if files.Length() > 0 {
 		file := files.Index(0)
-		imageSelected = file
-		changeImage()
+		m.imageSelected = file
+		m.changeImage()
 	}
 	return nil
 }
 
-func effectChange(this js.Value, args []js.Value) interface{} {
-	effectSelected = args[0].Get("target").Get("value").String()
-	if effectSelected == "ascii" {
-		document.Call("getElementById", "input-range").Call("setAttribute", "data-visible", "true")
-	} else {
-		document.Call("getElementById", "input-range").Call("setAttribute", "data-visible", "false")
+func (m *model) effectChange(this js.Value, args []js.Value) interface{} {
+	m.effectSelected = args[0].Get("target").Get("value").String()
+	inputZoomRangeDiv := m.document.Call("getElementById", "input-zoom-range-div")
+	dataVisible := "false"
+
+	if m.effectSelected == "ascii" {
+		dataVisible = "true"
 	}
-	changeImage()
-	return nil
-}
-func rangeChange(this js.Value, args []js.Value) interface{} {
-	imageWidth = args[0].Get("target").Get("value").String()
-	changeImage()
+	changeAttribute(inputZoomRangeDiv, "data-visible", dataVisible)
+
+	m.changeImage()
 	return nil
 }
 
-func changeImage() {
+func (m *model) inputEffectRangeChange(this js.Value, args []js.Value) interface{} {
+	m.effectRange = args[0].Get("target").Get("value").String()
+	println(m.effectRange)
+	m.changeImage()
+	return nil
+}
 
-	if imageSelected.IsUndefined() || imageSelected.IsNull() {
+func (m *model) inputZoomRangeChange(this js.Value, args []js.Value) interface{} {
+	m.imageWidth = args[0].Get("target").Get("value").String()
+	m.changeImage()
+	return nil
+}
+
+func (m *model) changeImage() {
+	println("changeImage")
+	if m.imageSelected.IsUndefined() || m.imageSelected.IsNull() {
+		println("imageNull")
 		return
 	}
 
+	contentDiv := m.document.Call("getElementById", "content-div")
+
+	changeAttribute(contentDiv, "data-loading", "true")
 	//clear ascii pre
-	document.Call("getElementById", "ascii-art").
+	m.document.Call("getElementById", "ascii-art").
 		Set("innerHTML", "")
-	document.Call("getElementById", "img").Set("src", "")
+	m.document.Call("getElementById", "img").Set("src", "")
 
-	fileReader := global.Get("FileReader").New()
+	fileReader := m.global.Get("FileReader").New()
 
+	println("onLoad js.Func")
 	var onLoad js.Func
 	onLoad = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+
+		println("onLoad")
 		arrayBuffer := this.Get("result")
 
-		uint8Array := global.Get("Uint8Array").New(arrayBuffer)
+		uint8Array := m.global.Get("Uint8Array").New(arrayBuffer)
 
 		input := make([]byte, uint8Array.Length())
 
@@ -91,53 +123,60 @@ func changeImage() {
 		var img image.Image = nil
 		var err error = nil
 
-		if imageSelected.Get("type").String() == "image/jpeg" {
+		if m.imageSelected.Get("type").String() == "image/jpeg" {
 			img, err = jpeg.Decode(bytes.NewReader(input))
 		} else {
 			img, _, err = image.Decode(bytes.NewReader(input))
 		}
 		if err != nil {
-			global.Call("alert", "Error decoding image")
+			m.global.Call("alert", "Error decoding image")
 			return nil
 		}
 
-		switch effectSelected {
+		switch m.effectSelected {
 
 		case "ascii":
-			value, _ := strconv.Atoi(imageWidth)
-			asciiGenerator(img, value)
+			value, _ := strconv.Atoi(m.imageWidth)
+
+			println("asciiGenerator")
+			m.asciiGenerator(img, value)
 		default:
-			imageEffectGenerator(img)
+
+			println("imageEffectGenerator")
+			m.imageEffectGenerator(img)
 		}
 		onLoad.Release()
+		changeAttribute(contentDiv, "data-loading", "false")
 		return nil
 	})
 
 	fileReader.Set("onload", onLoad)
-	fileReader.Call("readAsArrayBuffer", imageSelected)
+	fileReader.Call("readAsArrayBuffer", m.imageSelected)
 }
 
-func imageEffectGenerator(img image.Image) {
-	result := applyEffects(img, effectSelected, 3.0)
+func (m *model) imageEffectGenerator(img image.Image) {
+	value, _ := strconv.ParseFloat(m.effectRange, 64)
+	println(value)
+	result := applyEffects(img, m.effectSelected, value)
 
 	var buf bytes.Buffer
 	png.Encode(&buf, result)
 
 	data := buf.Bytes()
 
-	uint8Array := global.Get("Uint8Array").New(len(data))
+	uint8Array := m.global.Get("Uint8Array").New(len(data))
 
 	js.CopyBytesToJS(uint8Array, data)
 
-	array := global.Get("Array").New(1)
+	array := m.global.Get("Array").New(1)
 	array.SetIndex(0, uint8Array)
 
-	blobOpt := global.Get("Object").New()
+	blobOpt := m.global.Get("Object").New()
 	blobOpt.Set("type", "image/png")
-	blob := global.Get("Blob").New(array, blobOpt)
+	blob := m.global.Get("Blob").New(array, blobOpt)
 
-	url := global.Get("URL").Call("createObjectURL", blob)
-	document.Call("getElementById", "img").Set("src", url)
+	url := m.global.Get("URL").Call("createObjectURL", blob)
+	m.document.Call("getElementById", "img").Set("src", url)
 
 }
 
@@ -162,7 +201,7 @@ func applyEffects(img image.Image, effectString string, rate float64) image.Imag
 	case "invert":
 		result = effect.Invert(img)
 	case "median":
-		result = effect.Median(img, 10.0)
+		result = effect.Median(img, rate)
 	case "sepia":
 		result = effect.Sepia(img)
 	case "sharpen":
@@ -185,7 +224,7 @@ func resizeImg(img image.Image, newWidth int) image.Image {
 	return transform.Resize(img, newWidth, newHeight, transform.Linear)
 }
 
-func asciiGenerator(img image.Image, width int) {
+func (m *model) asciiGenerator(img image.Image, width int) {
 
 	density := []rune("Ñ@#W$9876543210?!abc;:+=-,._ ")
 
@@ -207,6 +246,10 @@ func asciiGenerator(img image.Image, width int) {
 		builder.WriteRune('\n')
 	}
 
-	asciiDiv := document.Call("getElementById", "ascii-art")
+	asciiDiv := m.document.Call("getElementById", "ascii-art")
 	asciiDiv.Set("innerHTML", builder.String())
+}
+
+func changeAttribute(content js.Value, attribute string, value string) {
+	content.Call("setAttribute", attribute, value)
 }
