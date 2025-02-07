@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -22,6 +23,7 @@ type model struct {
 	effectSelected  string
 	effectRange     string
 	checkAscii      bool
+	checkColor      bool
 	imageSelected   js.Value
 	global          js.Value
 	document        js.Value
@@ -42,21 +44,23 @@ func main() {
 		effectsRateMap: effectsRateMapFunc(),
 		global:         g,
 		document:       g.Get("document"),
+		checkColor:     true,
 	}
 
-	m.execChangeImage = debounce(500*time.Millisecond, func() {
-
+	//Adding debounce to changeImage func
+	m.execChangeImage = debounce(300*time.Millisecond, func() {
 		contentDiv := m.document.Call("getElementById", "content-div")
 		changeAttribute(contentDiv, "data-loading", "true")
 		m.changeImage()
 	})
 
-	//getting element
+	//getting elements
 	inputZoomRange := m.document.Call("getElementById", "input-zoom-range")
 	selectEffect := m.document.Call("getElementById", "select-effect")
 	selectAscii := m.document.Call("getElementById", "select-ascii")
 	inputEffectRange := m.document.Call("getElementById", "input-effect-range")
 	inputCheckboxAscii := m.document.Call("getElementById", "input-checkbox-ascii")
+	inputCheckboxColor := m.document.Call("getElementById", "input-checkbox-color")
 	inputFile := m.document.Call("getElementById", "input-file")
 	inputTextAscii := m.document.Call("getElementById", "input-text-ascii")
 
@@ -66,6 +70,7 @@ func main() {
 	selectAscii.Call("addEventListener", "input", js.FuncOf(m.selectAsciiChange))
 	inputEffectRange.Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
 	inputCheckboxAscii.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
+	inputCheckboxColor.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxColor))
 	inputFile.Call("addEventListener", "input", js.FuncOf(m.fileChange))
 	inputTextAscii.Call("addEventListener", "input", js.FuncOf(m.inputTextAsciiChange))
 
@@ -75,9 +80,16 @@ func main() {
 	selectAscii.Set("value", m.asciiChars)
 	inputEffectRange.Set("value", m.effectRange)
 	inputCheckboxAscii.Set("checked", m.checkAscii)
+	inputCheckboxColor.Set("checked", m.checkColor)
 	inputTextAscii.Set("value", m.asciiChars)
 
 	select {}
+}
+
+func (m *model) inputAsciiCheckboxColor(this js.Value, args []js.Value) interface{} {
+	m.checkColor = this.Get("checked").Bool()
+	m.execChangeImage()
+	return nil
 }
 
 func (m *model) inputAsciiCheckboxChange(this js.Value, args []js.Value) interface{} {
@@ -101,7 +113,7 @@ func (m *model) fileChange(this js.Value, args []js.Value) interface{} {
 	if files.Length() > 0 {
 		file := files.Index(0)
 		m.imageSelected = file
-		m.execChangeImage()
+		m.changeImage()
 	}
 	return nil
 }
@@ -125,7 +137,7 @@ func (m *model) selectAsciiChange(this js.Value, args []js.Value) interface{} {
 	m.document.Call("getElementById", "input-text-ascii").
 		Set("value", m.asciiChars)
 
-	m.execChangeImage()
+	m.changeImage()
 	return nil
 }
 
@@ -140,7 +152,7 @@ func (m *model) effectChange(this js.Value, args []js.Value) interface{} {
 	}
 
 	changeAttribute(inputRateRangeDiv, "data-visible", dataVisible)
-	m.execChangeImage()
+	m.changeImage()
 	return nil
 }
 
@@ -188,7 +200,7 @@ func (m *model) changeImage() {
 			img, _, err = image.Decode(bytes.NewReader(input))
 		}
 		if err != nil {
-			m.global.Call("alert", "Error decoding image")
+			m.global.Call("alert", "Image not supportaded")
 			return nil
 		}
 
@@ -232,7 +244,6 @@ func (m *model) imageEffectGenerator(img image.Image) {
 
 	url := m.global.Get("URL").Call("createObjectURL", blob)
 	m.document.Call("getElementById", "img").Set("src", url)
-
 }
 
 func (m *model) asciiGenerator(img image.Image, width int) {
@@ -250,8 +261,15 @@ func (m *model) asciiGenerator(img image.Image, width int) {
 
 			intensity := float64(gray.Y) / 255.0
 			charIndex := math.Floor(float64(len(density)-1) * intensity)
-			char := density[int(charIndex)]
-			builder.WriteRune([]rune(string(char))[0])
+
+			if m.checkColor {
+				r, g, b, _ := px.RGBA()
+				colorCSS := fmt.Sprintf("rgb(%d,%d,%d)", r>>8, g>>8, b>>8)
+				builder.WriteString(fmt.Sprintf(`<i style="color:%s">%c</i>`, colorCSS, density[int(charIndex)]))
+			} else {
+				builder.WriteRune([]rune(string(density[int(charIndex)]))[0])
+			}
+
 		}
 		builder.WriteRune('\n')
 	}
@@ -291,13 +309,10 @@ func applyEffects(img image.Image, effectString string, rate float64) image.Imag
 	}
 
 	return result
-
 }
 
 func resizeImg(img image.Image, newWidth int) image.Image {
-
 	imgBounds := img.Bounds()
-
 	aspectRatio := float64(newWidth) / float64(imgBounds.Dx())
 	newHeight := int(float64(imgBounds.Dy()) * aspectRatio)
 

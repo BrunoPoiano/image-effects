@@ -19,7 +19,7 @@
     <div class="menu">
       <div class="menu-item">
         <label class="file-input">
-          <input type="file" id="input-file">
+          <input type="file" id="input-file" accept=".png, .jpg, .jpeg">
         </label>
       </div>
       <div class="menu-item">
@@ -49,7 +49,12 @@
         <input type="checkbox" id="input-checkbox-ascii">
         <label for="input-checkbox-ascii">ASCII</label>
       </div>
+
       <div class="menu" id="ascii-div" data-visible="false">
+        <div class="menu-item-checkbox">
+          <input type="checkbox" id="input-checkbox-color">
+          <label for="input-checkbox-ascii">Color</label>
+        </div>
         <div class="menu-item">
           <label for="select-ascii">Preset Ascii</label>
           <select id="select-ascii">
@@ -88,7 +93,7 @@
     <div class="images" id="content-div" data-loading="false">
       <div class="loading">
         <h5>Loading...</h5>
-        </div>
+      </div>
       <img src="" alt="" id="img">
       <pre id="ascii-art">
       </pre>
