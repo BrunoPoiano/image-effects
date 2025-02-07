@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -32,7 +31,6 @@ type model struct {
 }
 
 func main() {
-	println("ContentLoaded")
 
 	g := js.Global()
 	m := &model{
@@ -47,7 +45,9 @@ func main() {
 	}
 
 	m.execChangeImage = debounce(500*time.Millisecond, func() {
-		fmt.Println("Function executed")
+
+		contentDiv := m.document.Call("getElementById", "content-div")
+		changeAttribute(contentDiv, "data-loading", "true")
 		m.changeImage()
 	})
 
@@ -85,9 +85,11 @@ func (m *model) inputAsciiCheckboxChange(this js.Value, args []js.Value) interfa
 
 	inputZoomRangeDiv := m.document.Call("getElementById", "ascii-div")
 	imageDiv := m.document.Call("getElementById", "img")
+	asciiDiv := m.document.Call("getElementById", "ascii-art")
 
 	changeAttribute(inputZoomRangeDiv, "data-visible", strconv.FormatBool(m.checkAscii))
 	changeAttribute(imageDiv, "data-visible", strconv.FormatBool(!m.checkAscii))
+	changeAttribute(asciiDiv, "data-visible", strconv.FormatBool(m.checkAscii))
 
 	m.execChangeImage()
 	return nil
@@ -159,9 +161,6 @@ func (m *model) changeImage() {
 		return
 	}
 
-	contentDiv := m.document.Call("getElementById", "content-div")
-
-	changeAttribute(contentDiv, "data-loading", "true")
 	//clear ascii pre
 	m.document.Call("getElementById", "ascii-art").
 		Set("innerHTML", "")
@@ -204,6 +203,7 @@ func (m *model) changeImage() {
 		}
 
 		onLoad.Release()
+		contentDiv := m.document.Call("getElementById", "content-div")
 		changeAttribute(contentDiv, "data-loading", "false")
 		return nil
 	})

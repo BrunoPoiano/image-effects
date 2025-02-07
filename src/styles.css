@@ -186,7 +186,7 @@ section {
   overflow: auto;
   min-height: max(20rem, 100%);
 
-  span {
+  .loading {
     display: none;
   }
 }
@@ -196,8 +196,13 @@ section {
     display: none;
   }
 
-  span {
+  .loading{
     display: grid;
+    width:100px;
+    height:100px;
+    svg path{
+      stroke: var(--primary-color)
+    }
   }
 }
 
@@ -277,7 +282,7 @@ section {
 }
 
 #ascii-art {
-  overflow-x: auto;
+  overflow: auto;
   font-size: 7px;
   line-height: 5px;
   font-family: "Courier New", Courier, monospace;
@@ -285,6 +290,7 @@ section {
 }
 
 footer {
+  margin-top:3rem;
   display: grid;
   place-items: center;
   gap: .8rem;
