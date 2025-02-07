@@ -93,14 +93,6 @@ func (m *model) inputAsciiCheckboxColor(this js.Value, args []js.Value) interfac
 func (m *model) inputAsciiCheckboxChange(this js.Value, args []js.Value) interface{} {
 	m.checkAscii = this.Get("checked").Bool()
 
-	inputZoomRangeDiv := m.document.Call("getElementById", "ascii-div")
-	imageDiv := m.document.Call("getElementById", "img")
-	asciiDiv := m.document.Call("getElementById", "ascii-art")
-
-	changeAttribute(inputZoomRangeDiv, "data-visible", strconv.FormatBool(m.checkAscii))
-	changeAttribute(imageDiv, "data-visible", strconv.FormatBool(!m.checkAscii))
-	changeAttribute(asciiDiv, "data-visible", strconv.FormatBool(m.checkAscii))
-
 	m.execChangeImage()
 	return nil
 }
@@ -208,6 +200,15 @@ func (m *model) changeImage() {
 		}
 
 		onLoad.Release()
+
+		inputZoomRangeDiv := m.document.Call("getElementById", "ascii-div")
+		imageDiv := m.document.Call("getElementById", "img")
+		asciiDiv := m.document.Call("getElementById", "ascii-art")
+
+		changeAttribute(inputZoomRangeDiv, "data-visible", strconv.FormatBool(m.checkAscii))
+		changeAttribute(imageDiv, "data-visible", strconv.FormatBool(!m.checkAscii))
+		changeAttribute(asciiDiv, "data-visible", strconv.FormatBool(m.checkAscii))
+
 		return nil
 	})
 
