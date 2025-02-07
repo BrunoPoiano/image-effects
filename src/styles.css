@@ -191,21 +191,6 @@ section {
   }
 }
 
-.images[data-loading="true"] {
-  >* {
-    display: none;
-  }
-
-  .loading{
-    display: grid;
-    width:100px;
-    height:100px;
-    svg path{
-      stroke: var(--primary-color)
-    }
-  }
-}
-
 .menu {
   display: grid;
   gap: 0.9rem;

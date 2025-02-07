@@ -48,9 +48,7 @@ func main() {
 	}
 
 	//Adding debounce to changeImage func
-	m.execChangeImage = debounce(300*time.Millisecond, func() {
-		contentDiv := m.document.Call("getElementById", "content-div")
-		changeAttribute(contentDiv, "data-loading", "true")
+	m.execChangeImage = debounce(200*time.Millisecond, func() {
 		m.changeImage()
 	})
 
@@ -173,11 +171,6 @@ func (m *model) changeImage() {
 		return
 	}
 
-	//clear ascii pre
-	m.document.Call("getElementById", "ascii-art").
-		Set("innerHTML", "")
-	m.document.Call("getElementById", "img").Set("src", "")
-
 	fileReader := m.global.Get("FileReader").New()
 
 	var onLoad js.Func
@@ -215,8 +208,6 @@ func (m *model) changeImage() {
 		}
 
 		onLoad.Release()
-		contentDiv := m.document.Call("getElementById", "content-div")
-		changeAttribute(contentDiv, "data-loading", "false")
 		return nil
 	})
 
