@@ -41,20 +41,25 @@ func main() {
 		document:       g.Get("document"),
 	}
 
-	m.document.Call("getElementById", "input-zoom-range").
-		Call("addEventListener", "input", js.FuncOf(m.inputZoomRangeChange))
+  //getting element
+	inputZoomRange := m.document.Call("getElementById", "input-zoom-range")
+	selectEffect := m.document.Call("getElementById", "select-effect")
+	inputEffectRange := m.document.Call("getElementById", "input-effect-range")
+	inputCheckboxAscii := m.document.Call("getElementById", "input-checkbox-ascii")
+  inputFile := m.document.Call("getElementById", "input-file")
 
-	m.document.Call("getElementById", "select-effect").
-		Call("addEventListener", "input", js.FuncOf(m.effectChange))
+  //adding reactivity
+	inputZoomRange.Call("addEventListener", "input", js.FuncOf(m.inputZoomRangeChange))
+	selectEffect.Call("addEventListener", "input", js.FuncOf(m.effectChange))
+	inputEffectRange.Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
+	inputCheckboxAscii.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
+  inputFile.Call("addEventListener", "input", js.FuncOf(m.fileChange))
 
-	m.document.Call("getElementById", "input-effect-range").
-		Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
-
-	m.document.Call("getElementById", "input-checkbox-ascii").
-		Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
-
-	m.document.Call("getElementById", "input-file").
-		Call("addEventListener", "input", js.FuncOf(m.fileChange))
+  //setting default value
+	inputZoomRange.Set("value", "100")
+	selectEffect.Set("value", "")
+	inputEffectRange.Set("value", "3")
+	inputCheckboxAscii.Set("checked", false)
 
 	select {}
 }
@@ -113,7 +118,6 @@ func (m *model) effectChange(this js.Value, args []js.Value) interface{} {
 
 func (m *model) inputEffectRangeChange(this js.Value, args []js.Value) interface{} {
 	m.effectRange = args[0].Get("target").Get("value").String()
-	println(m.effectRange)
 	m.changeImage()
 	return nil
 }
@@ -125,9 +129,7 @@ func (m *model) inputZoomRangeChange(this js.Value, args []js.Value) interface{}
 }
 
 func (m *model) changeImage() {
-	println("changeImage")
 	if m.imageSelected.IsUndefined() || m.imageSelected.IsNull() {
-		println("imageNull")
 		return
 	}
 
@@ -141,18 +143,15 @@ func (m *model) changeImage() {
 
 	fileReader := m.global.Get("FileReader").New()
 
-	println("onLoad js.Func")
 	var onLoad js.Func
 	onLoad = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 
-		println("onLoad")
 		arrayBuffer := this.Get("result")
 
 		uint8Array := m.global.Get("Uint8Array").New(arrayBuffer)
 
 		input := make([]byte, uint8Array.Length())
 
-		println("CopyBytesToGo")
 		js.CopyBytesToGo(input, uint8Array)
 
 		var img image.Image = nil
