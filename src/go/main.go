@@ -36,7 +36,7 @@ func main() {
 
 	g := js.Global()
 	m := &model{
-		asciiChars:     "@%#*+=-:. ",
+		asciiChars:     "░▒▓█",
 		imageWidth:     "100",
 		effectRange:    "3",
 		effectSelected: "",
