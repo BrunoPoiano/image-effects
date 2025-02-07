@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -10,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall/js"
+	"time"
 
 	"github.com/anthonynsimon/bild/blur"
 	"github.com/anthonynsimon/bild/effect"
@@ -17,15 +19,16 @@ import (
 )
 
 type model struct {
-	imageWidth     string
-	effectSelected string
-	effectRange    string
-	checkAscii     bool
-	imageSelected  js.Value
-	global         js.Value
-	document       js.Value
-	effectsRateMap map[string]bool
-	asciiChars     string
+	imageWidth      string
+	effectSelected  string
+	effectRange     string
+	checkAscii      bool
+	imageSelected   js.Value
+	global          js.Value
+	document        js.Value
+	effectsRateMap  map[string]bool
+	asciiChars      string
+	execChangeImage func()
 }
 
 func main() {
@@ -43,9 +46,15 @@ func main() {
 		document:       g.Get("document"),
 	}
 
+	m.execChangeImage = debounce(500*time.Millisecond, func() {
+		fmt.Println("Function executed")
+		m.changeImage()
+	})
+
 	//getting element
 	inputZoomRange := m.document.Call("getElementById", "input-zoom-range")
 	selectEffect := m.document.Call("getElementById", "select-effect")
+	selectAscii := m.document.Call("getElementById", "select-ascii")
 	inputEffectRange := m.document.Call("getElementById", "input-effect-range")
 	inputCheckboxAscii := m.document.Call("getElementById", "input-checkbox-ascii")
 	inputFile := m.document.Call("getElementById", "input-file")
@@ -54,13 +63,16 @@ func main() {
 	//adding reactivity
 	inputZoomRange.Call("addEventListener", "input", js.FuncOf(m.inputZoomRangeChange))
 	selectEffect.Call("addEventListener", "input", js.FuncOf(m.effectChange))
+	selectAscii.Call("addEventListener", "input", js.FuncOf(m.selectAsciiChange))
 	inputEffectRange.Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
 	inputCheckboxAscii.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
 	inputFile.Call("addEventListener", "input", js.FuncOf(m.fileChange))
+	inputTextAscii.Call("addEventListener", "input", js.FuncOf(m.inputTextAsciiChange))
 
 	//setting default value
 	inputZoomRange.Set("value", m.imageWidth)
 	selectEffect.Set("value", m.effectSelected)
+	selectAscii.Set("value", m.asciiChars)
 	inputEffectRange.Set("value", m.effectRange)
 	inputCheckboxAscii.Set("checked", m.checkAscii)
 	inputTextAscii.Set("value", m.asciiChars)
@@ -68,28 +80,16 @@ func main() {
 	select {}
 }
 
-func effectsRateMapFunc() map[string]bool {
-	effects := []string{"gaussianBlur", "blur", "Dilate", "edgeDetection", "erode", "median"}
-	effectsMap := make(map[string]bool)
-	for _, effect := range effects {
-		effectsMap[effect] = true
-	}
-
-	return effectsMap
-}
-
 func (m *model) inputAsciiCheckboxChange(this js.Value, args []js.Value) interface{} {
 	m.checkAscii = this.Get("checked").Bool()
 
 	inputZoomRangeDiv := m.document.Call("getElementById", "ascii-div")
-	dataVisible := "false"
+	imageDiv := m.document.Call("getElementById", "img")
 
-	if m.checkAscii {
-		dataVisible = "true"
-	}
-	changeAttribute(inputZoomRangeDiv, "data-visible", dataVisible)
+	changeAttribute(inputZoomRangeDiv, "data-visible", strconv.FormatBool(m.checkAscii))
+	changeAttribute(imageDiv, "data-visible", strconv.FormatBool(!m.checkAscii))
 
-	m.changeImage()
+	m.execChangeImage()
 	return nil
 }
 
@@ -99,8 +99,31 @@ func (m *model) fileChange(this js.Value, args []js.Value) interface{} {
 	if files.Length() > 0 {
 		file := files.Index(0)
 		m.imageSelected = file
-		m.changeImage()
+		m.execChangeImage()
 	}
+	return nil
+}
+
+func (m *model) inputTextAsciiChange(this js.Value, args []js.Value) interface{} {
+	value := args[0].Get("target").Get("value").String()
+
+	if value == "" || value == " " {
+		value = "@%#*+=-:. "
+	}
+
+	m.asciiChars = value
+
+	m.execChangeImage()
+	return nil
+}
+
+func (m *model) selectAsciiChange(this js.Value, args []js.Value) interface{} {
+	m.asciiChars = args[0].Get("target").Get("value").String()
+
+	m.document.Call("getElementById", "input-text-ascii").
+		Set("value", m.asciiChars)
+
+	m.execChangeImage()
 	return nil
 }
 
@@ -115,20 +138,19 @@ func (m *model) effectChange(this js.Value, args []js.Value) interface{} {
 	}
 
 	changeAttribute(inputRateRangeDiv, "data-visible", dataVisible)
-
-	m.changeImage()
+	m.execChangeImage()
 	return nil
 }
 
 func (m *model) inputEffectRangeChange(this js.Value, args []js.Value) interface{} {
 	m.effectRange = args[0].Get("target").Get("value").String()
-	m.changeImage()
+	m.execChangeImage()
 	return nil
 }
 
 func (m *model) inputZoomRangeChange(this js.Value, args []js.Value) interface{} {
 	m.imageWidth = args[0].Get("target").Get("value").String()
-	m.changeImage()
+	m.execChangeImage()
 	return nil
 }
 
@@ -213,6 +235,31 @@ func (m *model) imageEffectGenerator(img image.Image) {
 
 }
 
+func (m *model) asciiGenerator(img image.Image, width int) {
+	density := []rune(m.asciiChars)
+
+	resul := resizeImg(img, width)
+	bounds := resul.Bounds()
+	var builder strings.Builder
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			px := resul.At(x, y)
+			gr := color.GrayModel.Convert(px)
+			gray := gr.(color.Gray)
+
+			intensity := float64(gray.Y) / 255.0
+			charIndex := math.Floor(float64(len(density)-1) * intensity)
+			char := density[int(charIndex)]
+			builder.WriteRune([]rune(string(char))[0])
+		}
+		builder.WriteRune('\n')
+	}
+
+	asciiDiv := m.document.Call("getElementById", "ascii-art")
+	asciiDiv.Set("innerHTML", builder.String())
+}
+
 func applyEffects(img image.Image, effectString string, rate float64) image.Image {
 	var result image.Image = img
 
@@ -257,32 +304,27 @@ func resizeImg(img image.Image, newWidth int) image.Image {
 	return transform.Resize(img, newWidth, newHeight, transform.Linear)
 }
 
-func (m *model) asciiGenerator(img image.Image, width int) {
-	density := []rune(m.asciiChars)
-	//density := []rune("Ñ@#W$9876543210?!abc;:+=-,._ ")
-
-	resul := resizeImg(img, width)
-	bounds := resul.Bounds()
-	var builder strings.Builder
-
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			px := resul.At(x, y)
-			gr := color.GrayModel.Convert(px)
-			gray := gr.(color.Gray)
-
-			intensity := float64(gray.Y) / 255.0
-			charIndex := math.Floor(float64(len(density)-1) * intensity)
-			char := density[int(charIndex)]
-			builder.WriteRune([]rune(string(char))[0])
-		}
-		builder.WriteRune('\n')
-	}
-
-	asciiDiv := m.document.Call("getElementById", "ascii-art")
-	asciiDiv.Set("innerHTML", builder.String())
-}
-
 func changeAttribute(content js.Value, attribute string, value string) {
 	content.Call("setAttribute", attribute, value)
+}
+
+func effectsRateMapFunc() map[string]bool {
+	effects := []string{"gaussianBlur", "blur", "Dilate", "edgeDetection", "erode", "median"}
+	effectsMap := make(map[string]bool)
+	for _, effect := range effects {
+		effectsMap[effect] = true
+	}
+
+	return effectsMap
+}
+
+func debounce(duration time.Duration, fn func()) func() {
+	var timer *time.Timer
+
+	return func() {
+		if timer != nil {
+			timer.Stop()
+		}
+		timer = time.AfterFunc(duration, fn)
+	}
 }

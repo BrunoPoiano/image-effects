@@ -33,6 +33,16 @@ body {
   font-family: var(--font-family);
   font-size: 1.125rem;
   padding: 1em;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100lvh;
+
+  section {
+    flex-grow: 1;
+  }
 }
 
 body> :is(header, footer),
@@ -150,15 +160,28 @@ button {
   color: lch(from var(--bg) calc((49.44 - l) * infinity) 0 0);
 }
 
+.title {
+  display: block;
+
+  small {
+    color: var(--primary-color)
+  }
+}
+
 section {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
+
+  .images {
+    flex-grow: 1;
+  }
 }
 
 .images {
   display: grid;
   place-items: center;
+  align-items: start;
   gap: 0.5rem;
   overflow: auto;
   min-height: max(20rem, 100%);
@@ -182,6 +205,7 @@ section {
   display: grid;
   gap: 0.9rem;
   align-content: start;
+  width: min(300px, 100%);
 
   select {
     border: none;
@@ -198,7 +222,6 @@ section {
 .menu-item {
   display: grid;
   gap: 0.3rem;
-  max-width: min(200px, 100%);
 
   label {
     font-weight: 600;
@@ -221,8 +244,7 @@ section {
 .file-input {
   display: inline-block;
   position: relative;
-  width: min(200px, 100%);
-  cursor:pointer;
+  cursor: pointer;
 
   --font-size: 18px;
   --padding: 5px 10px;
@@ -242,7 +264,7 @@ section {
   &::before {
     font-size: var(--font-size);
     padding: var(--padding);
-    content: "Please Choose File";
+    content: "Choose a image";
     border-radius: 5px;
     background: var(--primary-color);
     border: 2px solid var(--primary-color);
@@ -260,6 +282,27 @@ section {
   line-height: 5px;
   font-family: "Courier New", Courier, monospace;
   white-space: pre;
+}
+
+footer {
+  display: grid;
+  place-items: center;
+  gap: .8rem;
+
+  .links {
+    a {
+      svg {
+        width: 2rem;
+        height: 2rem;
+      }
+
+      &:hover {
+        svg path {
+          fill: var(--primary-color)
+        }
+      }
+    }
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
