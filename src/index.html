@@ -14,38 +14,45 @@
   <main>
     <h1>WebAssembly Image Effects</h1>
     <section>
-      <div id="menu">
-        <label class="file-input">
-          <input type="file" id="input-file">
-        </label>
-        <div class="effects">
+      <div class="menu">
+        <div class="menu-item">
+          <label class="file-input">
+            <input type="file" id="input-file">
+          </label>
+        </div>
+        <div class="menu-item">
+          <label for="select-effect">Effects</label>
+          <select id="select-effect">
+            <option value="gaussianBlur">gaussianBlur</option>
+            <option value="blur">blur</option>
+            <option value="dilate">dilate</option>
+            <option value="edgeDetection">edgeDetection</option>
+            <option value="emboss">emboss</option>
+            <option value="erode">erode</option>
+            <option value="grayscale">grayscale</option>
+            <option value="invert">invert</option>
+            <option value="median">median</option>
+            <option value="sepia">sepia</option>
+            <option value="sharpen">sharpen</option>
+            <option value="sobale">sobale</option>
+            <option value="" selected>None</option>
+          </select>
+        </div>
+        <div class="menu-item" id="input-rate-range-div" data-visible="false">
+          <label for="input-effect-range">Intensity</label>
+          <input type="range" min="0" max="10" id="input-effect-range">
+        </div>
+        <div class="menu-item-checkbox">
+          <input type="checkbox" id="input-checkbox-ascii">
+          <label for="input-checkbox-ascii">ASCII</label>
+        </div>
+
+        <div class="menu" id="ascii-div" data-visible="false">
           <div class="menu-item">
-            <label for="select-effect">Effects</label>
-            <select id="select-effect">
-              <option value="gaussianBlur">gaussianBlur</option>
-              <option value="blur">blur</option>
-              <option value="dilate">dilate</option>
-              <option value="edgeDetection">edgeDetection</option>
-              <option value="emboss">emboss</option>
-              <option value="erode">erode</option>
-              <option value="grayscale">grayscale</option>
-              <option value="invert">invert</option>
-              <option value="median">median</option>
-              <option value="sepia">sepia</option>
-              <option value="sharpen">sharpen</option>
-              <option value="sobale">sobale</option>
-              <option value="" selected>None</option>
-            </select>
+            <label for="input-effect-range">Ascii Characters</label>
+            <input type="text" id="input-text-ascii">
           </div>
-          <div class="menu-item-checkbox">
-            <input type="checkbox" id="input-checkbox-ascii">
-              <label for="input-checkbox-ascii">ASCII</label>
-          </div>
-          <div class="menu-item" id="input-rate-range-div" data-visible="false">
-            <label for="input-effect-range">Intensity</label>
-            <input type="range" min="0" max="10" id="input-effect-range">
-          </div>
-          <div class="menu-item" id="input-zoom-range-div" data-visible="false">
+          <div class="menu-item">
             <label for="input-range">Zoom</label>
             <input type="range" value="100" min="50" max="200" id="input-zoom-range">
           </div>

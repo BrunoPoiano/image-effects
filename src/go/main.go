@@ -25,6 +25,7 @@ type model struct {
 	global         js.Value
 	document       js.Value
 	effectsRateMap map[string]bool
+	asciiChars     string
 }
 
 func main() {
@@ -32,34 +33,37 @@ func main() {
 
 	g := js.Global()
 	m := &model{
+		asciiChars:     "@%#*+=-:. ",
 		imageWidth:     "100",
 		effectRange:    "3",
-		effectSelected: "ascii",
+		effectSelected: "",
 		checkAscii:     false,
 		effectsRateMap: effectsRateMapFunc(),
 		global:         g,
 		document:       g.Get("document"),
 	}
 
-  //getting element
+	//getting element
 	inputZoomRange := m.document.Call("getElementById", "input-zoom-range")
 	selectEffect := m.document.Call("getElementById", "select-effect")
 	inputEffectRange := m.document.Call("getElementById", "input-effect-range")
 	inputCheckboxAscii := m.document.Call("getElementById", "input-checkbox-ascii")
-  inputFile := m.document.Call("getElementById", "input-file")
+	inputFile := m.document.Call("getElementById", "input-file")
+	inputTextAscii := m.document.Call("getElementById", "input-text-ascii")
 
-  //adding reactivity
+	//adding reactivity
 	inputZoomRange.Call("addEventListener", "input", js.FuncOf(m.inputZoomRangeChange))
 	selectEffect.Call("addEventListener", "input", js.FuncOf(m.effectChange))
 	inputEffectRange.Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
 	inputCheckboxAscii.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
-  inputFile.Call("addEventListener", "input", js.FuncOf(m.fileChange))
+	inputFile.Call("addEventListener", "input", js.FuncOf(m.fileChange))
 
-  //setting default value
-	inputZoomRange.Set("value", "100")
-	selectEffect.Set("value", "")
-	inputEffectRange.Set("value", "3")
-	inputCheckboxAscii.Set("checked", false)
+	//setting default value
+	inputZoomRange.Set("value", m.imageWidth)
+	selectEffect.Set("value", m.effectSelected)
+	inputEffectRange.Set("value", m.effectRange)
+	inputCheckboxAscii.Set("checked", m.checkAscii)
+	inputTextAscii.Set("value", m.asciiChars)
 
 	select {}
 }
@@ -77,7 +81,7 @@ func effectsRateMapFunc() map[string]bool {
 func (m *model) inputAsciiCheckboxChange(this js.Value, args []js.Value) interface{} {
 	m.checkAscii = this.Get("checked").Bool()
 
-	inputZoomRangeDiv := m.document.Call("getElementById", "input-zoom-range-div")
+	inputZoomRangeDiv := m.document.Call("getElementById", "ascii-div")
 	dataVisible := "false"
 
 	if m.checkAscii {
@@ -254,7 +258,7 @@ func resizeImg(img image.Image, newWidth int) image.Image {
 }
 
 func (m *model) asciiGenerator(img image.Image, width int) {
-	density := []rune("@%#*+=-:. ")
+	density := []rune(m.asciiChars)
 	//density := []rune("Ñ@#W$9876543210?!abc;:+=-,._ ")
 
 	resul := resizeImg(img, width)

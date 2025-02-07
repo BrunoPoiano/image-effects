@@ -1,45 +1,45 @@
 *,
 *::after,
 *::before {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 :root {
-	interpolate-size: allow-keywords;
+  interpolate-size: allow-keywords;
 
-	--font-size-sm: clamp(0.8rem, 0.17vw + 0.76rem, 0.89rem);
-	--font-size-base: clamp(1rem, 0.34vw + 0.91rem, 1.19rem);
-	--font-size-md: clamp(1.25rem, 0.61vw + 1.1rem, 1.58rem);
-	--font-size-lg: clamp(1.56rem, 1vw + 1.31rem, 2.11rem);
-	--font-size-xl: clamp(1.95rem, 1.56vw + 1.56rem, 2.81rem);
-	--font-size-xxl: clamp(2.44rem, 2.38vw + 1.85rem, 3.75rem);
-	--font-size-xxxl: clamp(3.05rem, 3.54vw + 2.17rem, 5rem);
+  --font-size-sm: clamp(0.8rem, 0.17vw + 0.76rem, 0.89rem);
+  --font-size-base: clamp(1rem, 0.34vw + 0.91rem, 1.19rem);
+  --font-size-md: clamp(1.25rem, 0.61vw + 1.1rem, 1.58rem);
+  --font-size-lg: clamp(1.56rem, 1vw + 1.31rem, 2.11rem);
+  --font-size-xl: clamp(1.95rem, 1.56vw + 1.56rem, 2.81rem);
+  --font-size-xxl: clamp(2.44rem, 2.38vw + 1.85rem, 3.75rem);
+  --font-size-xxxl: clamp(3.05rem, 3.54vw + 2.17rem, 5rem);
 
-	--font-family: system-ui, -apple-system, blinkmacsystemfont, "segoe ui",
-		roboto, oxygen, ubuntu, cantarell, "open sans", "helvetica neue", sans-serif;
+  --font-family: system-ui, -apple-system, blinkmacsystemfont, "segoe ui",
+    roboto, oxygen, ubuntu, cantarell, "open sans", "helvetica neue", sans-serif;
 
-	--primary-color: #930000;
+  --primary-color: #930000;
 }
 
 html {
-	hanging-punctuation: first last;
-	color-scheme: dark;
-	/*Or 'light' */
+  hanging-punctuation: first last;
+  color-scheme: dark light;
+  ;
 }
 
 body {
-	font-family: var(--font-family);
-	font-size: 1.125rem;
-	padding: 1em;
+  font-family: var(--font-family);
+  font-size: 1.125rem;
+  padding: 1em;
 }
 
-body > :is(header, footer),
+body> :is(header, footer),
 section,
 main,
 article {
-	container-type: inline-size;
+  container-type: inline-size;
 }
 
 h1,
@@ -48,252 +48,227 @@ h3,
 h4,
 h5,
 h6 {
-	text-wrap: balance;
+  text-wrap: balance;
 }
 
 h1 {
-	--_font-size: var(--font-size-xxl);
-	margin-bottom: 0.5em;
-	font-size: var(--_font-size);
-	font-weight: 900;
-	line-height: calc(var(--_font-size) * 1.1);
-	letter-spacing: -2px;
+  --_font-size: var(--font-size-xxl);
+  margin-bottom: 0.5em;
+  font-size: var(--_font-size);
+  font-weight: 900;
+  line-height: calc(var(--_font-size) * 1.1);
+  letter-spacing: -2px;
 }
 
 h2 {
-	--_font-size: var(--font-size-xl);
-	place-self: start;
-	font-size: var(--_font-size);
-	font-weight: 600;
-	line-height: calc(var(--_font-size) * 1.1);
-	letter-spacing: -2px;
-	margin-bottom: 0.5em;
+  --_font-size: var(--font-size-xl);
+  place-self: start;
+  font-size: var(--_font-size);
+  font-weight: 600;
+  line-height: calc(var(--_font-size) * 1.1);
+  letter-spacing: -2px;
+  margin-bottom: 0.5em;
 }
 
 h3 {
-	--_font-size: var(--font-size-lg);
-	font-size: var(--_font-size);
-	font-weight: 400;
-	line-height: calc(var(--_font-size) * 1.1);
-	letter-spacing: -2px;
-	margin-bottom: 0.5em;
+  --_font-size: var(--font-size-lg);
+  font-size: var(--_font-size);
+  font-weight: 400;
+  line-height: calc(var(--_font-size) * 1.1);
+  letter-spacing: -2px;
+  margin-bottom: 0.5em;
 }
 
 p,
 li,
 figcaption {
-	text-wrap: pretty;
-	max-width: 65ch;
+  text-wrap: pretty;
+  max-width: 65ch;
 }
 
 p {
-	--_font-size: var(--font-size-base);
-	font-size: var(--_font-size);
-	line-height: calc(var(--_font-size) * 1.3);
-	margin-bottom: 0.5em;
+  --_font-size: var(--font-size-base);
+  font-size: var(--_font-size);
+  line-height: calc(var(--_font-size) * 1.3);
+  margin-bottom: 0.5em;
 }
 
 a {
-	text-decoration: none;
-	cursor: pointer;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 small {
-	font-size: var(--font-size-sm);
+  font-size: var(--font-size-sm);
 }
 
 button,
 select,
 input,
 textarea {
-	font-size: inherit;
+  font-size: inherit;
 }
 
 img {
-	max-width: 100%;
-	height: auto;
-	display: block;
-	object-fit: contain;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+input {
+  accent-color: var(--primary-color);
+  caret-color: var(--primary-color);
+  width: 100%;
+}
+
+input[type="range"] {
+  background: #00f0;
+}
+
+input[type="text"] {
+  padding: .5rem .9rem;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid #848484;
+
+  &:focus-visible {
+
+    border: 1px solid var(--primary-color);
+    outline: none;
+  }
 }
 
 button {
-	cursor: pointer;
-	min-width: 10ch;
+  cursor: pointer;
+  min-width: 10ch;
 
-	--bg: #fff;
-	background: var(--bg);
-	/* This swaps between white or black based on the background color. */
-	/* After testing against all RGB background colors, 49.44 minimizes the number of WCAG 4.5:1 contrast failures. */
-	color: lch(from var(--bg) calc((49.44 - l) * infinity) 0 0);
-}
-
-form {
-	width: 100%;
-	max-width: 50ch;
-
-	input:not(:placeholder-shown):valid,
-	textarea:not(:placeholder-shown):valid,
-	select:not(:placeholder-shown):valid {
-		outline-color: green;
-	}
-
-	input:not(:placeholder-shown):invalid,
-	textarea:not(:placeholder-shown):invalid,
-	select:not(:placeholder-shown):invalid {
-		outline-color: red;
-	}
-
-	input:focus:invalid,
-	textarea:focus:invalid,
-	select:focus:invalid {
-		outline-color: blue;
-	}
+  --bg: #fff;
+  background: var(--bg);
+  /* This swaps between white or black based on the background color. */
+  /* After testing against all RGB background colors, 49.44 minimizes the number of WCAG 4.5:1 contrast failures. */
+  color: lch(from var(--bg) calc((49.44 - l) * infinity) 0 0);
 }
 
 section {
-	display: grid;
-	grid-template-columns: auto 1fr;
-	gap: 1rem;
-}
-
-#menu {
-	display: grid;
-	align-content: start;
-	gap: 0.7rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
 }
 
 .images {
-	display: grid;
-	place-items: center;
-	gap: 0.5rem;
-	overflow: auto;
+  display: grid;
+  place-items: center;
+  gap: 0.5rem;
+  overflow: auto;
   min-height: max(20rem, 100%);
 
-	span {
-		display: none;
-	}
+  span {
+    display: none;
+  }
 }
 
 .images[data-loading="true"] {
-	> * {
-		display: none;
-	}
+  >* {
+    display: none;
+  }
 
-	span {
-		display: grid;
-	}
+  span {
+    display: grid;
+  }
 }
 
-.effects {
-	display: grid;
-	gap: 0.5rem;
+.menu {
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
 
-	select {
-		border: none;
-		padding: .6em 0.8em;
-		font-size: 1.2rem;
-		border-radius: 5px;
+  select {
+    border: none;
+    padding: .6em 0.8em;
+    font-size: 1.2rem;
+    border-radius: 5px;
 
-		background: var(--primary-color);
-		border: 2px solid var(--primary-color);
-		color: #fff;
-	}
+    background: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    color: #fff;
+  }
 }
 
 .menu-item {
-	display: grid;
-	gap: 0.3rem;
+  display: grid;
+  gap: 0.3rem;
+  max-width: min(200px, 100%);
 
-	label {
-		font-weight: 600;
-	}
+  label {
+    font-weight: 600;
+  }
 }
 
 .menu-item-checkbox {
-	display: flex;
-	gap: 0.3rem;
+  display: flex;
+  gap: 0.3rem;
 
-	label {
-		font-weight: 600;
-	}
-  input{
+  label {
+    font-weight: 600;
+  }
+
+  input {
     width: 2rem;
   }
 }
 
-
 .file-input {
-	display: inline-block;
-	position: relative;
-	width: 200px;
+  display: inline-block;
+  position: relative;
+  width: min(200px, 100%);
+  cursor:pointer;
 
-	--font-size: 18px;
-	--padding: 5px 10px;
+  --font-size: 18px;
+  --padding: 5px 10px;
 
-	input[type="file"] {
-		width: 100%;
+  input[type="file"] {
+    width: 100%;
 
-		&::file-selector-button {
-			display: block;
-			opacity: 0;
-			margin-bottom: 5px;
-			font-size: var(--font-size);
-			padding: var(--padding);
-		}
-	}
+    &::file-selector-button {
+      display: block;
+      opacity: 0;
+      margin-bottom: 5px;
+      font-size: var(--font-size);
+      padding: var(--padding);
+    }
+  }
 
-	&::before {
-		font-size: var(--font-size);
-		padding: var(--padding);
-		content: "Please Choose File";
-		border-radius: 5px;
-		background: var(--primary-color);
-		border: 2px solid var(--primary-color);
-		color: #fff;
-		text-align: center;
-		box-sizing: border-box;
-		width: 100%;
-		position: absolute;
-	}
+  &::before {
+    font-size: var(--font-size);
+    padding: var(--padding);
+    content: "Please Choose File";
+    border-radius: 5px;
+    background: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    color: #fff;
+    text-align: center;
+    box-sizing: border-box;
+    width: 100%;
+    position: absolute;
+  }
 }
-
-input[type="range"] {
-	background: #00f0;
-}
-
-input[type="range"]::-moz-range-progress {
-	background-color: var(--primary-color);
-}
-
-input[type="range"]::-moz-range-track {
-	background-color: var(--primary-color);
-}
-
-input[type="range"]::-ms-fill-lower {
-	background-color: var(--primary-color);
-}
-
-input[type="range"]::-ms-fill-upper {
-	background-color: var(--primary-color);
-}
-
-
 
 #ascii-art {
-	overflow-x: auto;
-	font-size: 7px;
-	line-height: 5px;
-	font-family: "Courier New", Courier, monospace;
-	white-space: pre;
+  overflow-x: auto;
+  font-size: 7px;
+  line-height: 5px;
+  font-family: "Courier New", Courier, monospace;
+  white-space: pre;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-	:has(:target) {
-		scroll-behavior: smooth;
-		scroll-padding-top: 4rem;
-	}
+  :has(:target) {
+    scroll-behavior: smooth;
+    scroll-padding-top: 4rem;
+  }
 }
 
 [data-visible="false"] {
-	display: none;
+  display: none;
 }
