@@ -32,3 +32,7 @@ src/go/main.go
 ```bash
 GOOS=js GOARCH=wasm go build -o main.wasm
 ```
+
+## Ref
+
+ - [Bild](https://github.com/anthonynsimon/bild)
