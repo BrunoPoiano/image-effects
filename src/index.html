@@ -31,18 +31,33 @@
           <option value="dilate">dilate</option>
           <option value="edgeDetection">edgeDetection</option>
           <option value="emboss">emboss</option>
-          <option value="erode">erode</option>
+          <option value="erode">erode</optionresult>
           <option value="grayscale">grayscale</option>
           <option value="invert">invert</option>
           <!--<option value="median">median</option>-->
           <option value="sepia">sepia</option>
           <option value="sharpen">sharpen</option>
           <option value="sobale">sobale</option>
+          <option value="brightness">brightness</option>
+          <option value="contrast">contrast</option>
+          <option value="gamma">gamma</option>
+          <option value="hue">hue</option>
+          <option value="saturation">saturation</option>
+          <option value="threshold">threshold</option>
+          <option value="flipH">flip horizontal</option>
+          <option value="flipV">flip vertical</option>
+          <option value="shearH">shear Horizontal</option>
+          <option value="shearV">shear Vertical</option>
+          <option value="noiseUniformColored">noise uniform colored</option>
+          <option value="noiseBinaryMonochrome">noise binary monochrome</option>
+          <option value="noiseGaussianMonochrome">noise gaussian monochrome</option>
+          <option value="noisePerlin">noise perlin</option>
         </select>
       </div>
-      <div class="menu-item" id="input-rate-range-div" data-visible="false">
+
+      <div class="menu-item" id="input-rate-range-div" data-visible="false" data-min="0" data-max="10">
         <label for="input-effect-range">Intensity</label>
-        <input type="range" min="0" max="10" id="input-effect-range">
+        <input type="range" id="input-effect-range" min="0" max="10">
       </div>
 
       <div class="menu-item-checkbox">

@@ -212,10 +212,32 @@ section {
 .menu-item {
   display: grid;
   gap: 0.3rem;
+  position: relative;
 
   label {
     font-weight: 600;
   }
+
+  &:after,
+  &:before {
+    position: absolute;
+    bottom: 0;
+  }
+
+  &:after {
+    right: 0;
+    content: attr(data-max);
+  }
+
+  &:before {
+    left: 0;
+    content: attr(data-min);
+  }
+}
+
+#input-rate-range-div {
+  padding-bottom: 20px;
+
 }
 
 .menu-item-checkbox {
@@ -275,7 +297,7 @@ section {
 }
 
 footer {
-  margin-top:3rem;
+  margin-top: 3rem;
   display: grid;
   place-items: center;
   gap: .8rem;

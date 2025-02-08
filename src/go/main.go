@@ -13,15 +13,19 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/anthonynsimon/bild/adjust"
+	"github.com/anthonynsimon/bild/blend"
 	"github.com/anthonynsimon/bild/blur"
 	"github.com/anthonynsimon/bild/effect"
+	"github.com/anthonynsimon/bild/noise"
+	"github.com/anthonynsimon/bild/segment"
 	"github.com/anthonynsimon/bild/transform"
 )
 
 type model struct {
-	imageWidth      string
+	imageWidth      int
 	effectSelected  string
-	effectRange     string
+	effectRange     float64
 	checkAscii      bool
 	checkColor      bool
 	imageSelected   js.Value
@@ -37,8 +41,8 @@ func main() {
 	g := js.Global()
 	m := &model{
 		asciiChars:     "░▒▓█",
-		imageWidth:     "100",
-		effectRange:    "3",
+		imageWidth:     100,
+		effectRange:    0,
 		effectSelected: "",
 		checkAscii:     false,
 		effectsRateMap: effectsRateMapFunc(),
@@ -53,33 +57,33 @@ func main() {
 	})
 
 	//getting elements
+	inputCheckboxAscii := m.document.Call("getElementById", "input-checkbox-ascii")
+	inputCheckboxColor := m.document.Call("getElementById", "input-checkbox-color")
+	inputEffectRange := m.document.Call("getElementById", "input-effect-range")
+	inputTextAscii := m.document.Call("getElementById", "input-text-ascii")
 	inputZoomRange := m.document.Call("getElementById", "input-zoom-range")
 	selectEffect := m.document.Call("getElementById", "select-effect")
 	selectAscii := m.document.Call("getElementById", "select-ascii")
-	inputEffectRange := m.document.Call("getElementById", "input-effect-range")
-	inputCheckboxAscii := m.document.Call("getElementById", "input-checkbox-ascii")
-	inputCheckboxColor := m.document.Call("getElementById", "input-checkbox-color")
 	inputFile := m.document.Call("getElementById", "input-file")
-	inputTextAscii := m.document.Call("getElementById", "input-text-ascii")
 
 	//adding reactivity
+	inputCheckboxAscii.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
+	inputCheckboxColor.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxColor))
+	inputEffectRange.Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
+	inputTextAscii.Call("addEventListener", "input", js.FuncOf(m.inputTextAsciiChange))
 	inputZoomRange.Call("addEventListener", "input", js.FuncOf(m.inputZoomRangeChange))
 	selectEffect.Call("addEventListener", "input", js.FuncOf(m.effectChange))
 	selectAscii.Call("addEventListener", "input", js.FuncOf(m.selectAsciiChange))
-	inputEffectRange.Call("addEventListener", "input", js.FuncOf(m.inputEffectRangeChange))
-	inputCheckboxAscii.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxChange))
-	inputCheckboxColor.Call("addEventListener", "input", js.FuncOf(m.inputAsciiCheckboxColor))
 	inputFile.Call("addEventListener", "input", js.FuncOf(m.fileChange))
-	inputTextAscii.Call("addEventListener", "input", js.FuncOf(m.inputTextAsciiChange))
 
 	//setting default value
+	inputCheckboxAscii.Set("checked", m.checkAscii)
+	inputCheckboxColor.Set("checked", m.checkColor)
+	inputEffectRange.Set("value", m.effectRange)
+	inputTextAscii.Set("value", m.asciiChars)
 	inputZoomRange.Set("value", m.imageWidth)
 	selectEffect.Set("value", m.effectSelected)
 	selectAscii.Set("value", m.asciiChars)
-	inputEffectRange.Set("value", m.effectRange)
-	inputCheckboxAscii.Set("checked", m.checkAscii)
-	inputCheckboxColor.Set("checked", m.checkColor)
-	inputTextAscii.Set("value", m.asciiChars)
 
 	select {}
 }
@@ -92,7 +96,6 @@ func (m *model) inputAsciiCheckboxColor(this js.Value, args []js.Value) interfac
 
 func (m *model) inputAsciiCheckboxChange(this js.Value, args []js.Value) interface{} {
 	m.checkAscii = this.Get("checked").Bool()
-
 	m.execChangeImage()
 	return nil
 }
@@ -101,59 +104,79 @@ func (m *model) fileChange(this js.Value, args []js.Value) interface{} {
 	files := args[0].Get("target").Get("files")
 
 	if files.Length() > 0 {
-		file := files.Index(0)
-		m.imageSelected = file
+		m.imageSelected = files.Index(0)
 		m.changeImage()
 	}
 	return nil
 }
 
 func (m *model) inputTextAsciiChange(this js.Value, args []js.Value) interface{} {
-	value := args[0].Get("target").Get("value").String()
-
-	if value == "" || value == " " {
-		value = "@%#*+=-:. "
-	}
-
-	m.asciiChars = value
-
+	m.asciiChars = args[0].Get("target").Get("value").String()
 	m.execChangeImage()
 	return nil
 }
 
 func (m *model) selectAsciiChange(this js.Value, args []js.Value) interface{} {
 	m.asciiChars = args[0].Get("target").Get("value").String()
-
-	m.document.Call("getElementById", "input-text-ascii").
-		Set("value", m.asciiChars)
-
+	m.document.Call("getElementById", "input-text-ascii").Set("value", m.asciiChars)
 	m.changeImage()
 	return nil
 }
 
 func (m *model) effectChange(this js.Value, args []js.Value) interface{} {
 	m.effectSelected = args[0].Get("target").Get("value").String()
-
-	inputRateRangeDiv := m.document.Call("getElementById", "input-rate-range-div")
-	dataVisible := "false"
+	m.effectRange = 0
 
 	if m.effectsRateMap[m.effectSelected] {
-		dataVisible = "true"
+		m.updateEffectRange("0", "10", "1")
+	} else {
+		switch m.effectSelected {
+		case "brightness", "contrast", "saturation":
+			m.updateEffectRange("-1", "1", "0.1")
+		case "hue":
+			m.updateEffectRange("-360", "360", "1")
+		case "gamma":
+			m.updateEffectRange("1", "5", "0.2")
+		case "threshold":
+			m.updateEffectRange("0", "200", "1")
+		case "noisePerlin":
+			m.updateEffectRange("0", "1", "0.01")
+		case "shearH", "shearV":
+			m.updateEffectRange("0", "180", "1")
+		default:
+			inputRateRangeDiv := m.document.Call("getElementById", "input-rate-range-div")
+			changeAttribute(inputRateRangeDiv, "data-visible", "false")
+		}
 	}
 
-	changeAttribute(inputRateRangeDiv, "data-visible", dataVisible)
 	m.changeImage()
 	return nil
 }
 
+func (m model) updateEffectRange(min string, max string, step string) {
+	inputRange := m.document.Call("getElementById", "input-effect-range")
+	inputRange.Set("value", "0")
+	inputRange.Set("min", min)
+	inputRange.Set("max", max)
+	inputRange.Set("step", step)
+
+	inputRateRangeDiv := m.document.Call("getElementById", "input-rate-range-div")
+	changeAttribute(inputRateRangeDiv, "data-min", min)
+	changeAttribute(inputRateRangeDiv, "data-max", max)
+	changeAttribute(inputRateRangeDiv, "data-visible", "true")
+
+}
+
 func (m *model) inputEffectRangeChange(this js.Value, args []js.Value) interface{} {
-	m.effectRange = args[0].Get("target").Get("value").String()
+	value := args[0].Get("target").Get("value").String()
+	m.effectRange, _ = strconv.ParseFloat(value, 64)
 	m.execChangeImage()
 	return nil
 }
 
 func (m *model) inputZoomRangeChange(this js.Value, args []js.Value) interface{} {
-	m.imageWidth = args[0].Get("target").Get("value").String()
+	value := args[0].Get("target").Get("value").String()
+	m.imageWidth, _ = strconv.Atoi(value)
 	m.execChangeImage()
 	return nil
 }
@@ -163,17 +186,17 @@ func (m *model) changeImage() {
 		return
 	}
 
+	if m.asciiChars == "" || m.asciiChars == " " {
+		return
+	}
+
 	fileReader := m.global.Get("FileReader").New()
 
 	var onLoad js.Func
 	onLoad = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 
-		arrayBuffer := this.Get("result")
-
-		uint8Array := m.global.Get("Uint8Array").New(arrayBuffer)
-
+		uint8Array := m.global.Get("Uint8Array").New(this.Get("result"))
 		input := make([]byte, uint8Array.Length())
-
 		js.CopyBytesToGo(input, uint8Array)
 
 		var img image.Image = nil
@@ -189,12 +212,10 @@ func (m *model) changeImage() {
 			return nil
 		}
 
-		value, _ := strconv.ParseFloat(m.effectRange, 64)
-		imgWithEffects := applyEffects(img, m.effectSelected, value)
+		imgWithEffects := m.applyEffects(img)
 
 		if m.checkAscii {
-			value, _ := strconv.Atoi(m.imageWidth)
-			m.asciiGenerator(imgWithEffects, value)
+			m.asciiGenerator(imgWithEffects)
 		} else {
 			m.imageEffectGenerator(imgWithEffects)
 		}
@@ -238,10 +259,11 @@ func (m *model) imageEffectGenerator(img image.Image) {
 	m.document.Call("getElementById", "img").Set("src", url)
 }
 
-func (m *model) asciiGenerator(img image.Image, width int) {
+func (m *model) asciiGenerator(img image.Image) {
 	density := []rune(m.asciiChars)
 
-	resul := resizeImg(img, width)
+	width, height := resizeImg(img, m.imageWidth)
+	resul := transform.Resize(img, width, height, transform.Linear)
 	bounds := resul.Bounds()
 	var builder strings.Builder
 
@@ -270,45 +292,83 @@ func (m *model) asciiGenerator(img image.Image, width int) {
 	asciiDiv.Set("innerHTML", builder.String())
 }
 
-func applyEffects(img image.Image, effectString string, rate float64) image.Image {
+func (m model) applyEffects(img image.Image) image.Image {
 	var result image.Image = img
 
-	switch effectString {
+	switch m.effectSelected {
 	case "gaussianBlur":
-		result = blur.Gaussian(result, rate)
+		result = blur.Gaussian(result, float64(m.effectRange))
 	case "blur":
-		result = blur.Box(result, rate)
+		result = blur.Box(result, float64(m.effectRange))
 	case "Dilate":
-		result = effect.Dilate(result, rate)
+		result = effect.Dilate(result, float64(m.effectRange))
 	case "edgeDetection":
-		result = effect.EdgeDetection(result, rate)
+		result = effect.EdgeDetection(result, float64(m.effectRange))
 	case "emboss":
 		result = effect.Emboss(result)
 	case "erode":
-		result = effect.Erode(result, rate)
+		result = effect.Erode(result, float64(m.effectRange))
 	case "grayscale":
-		result = effect.Grayscale(img)
+		result = effect.Grayscale(result)
 	case "invert":
-		result = effect.Invert(img)
+		result = effect.Invert(result)
 	case "median":
-		result = effect.Median(img, rate)
+		result = effect.Median(result, float64(m.effectRange))
 	case "sepia":
-		result = effect.Sepia(img)
+		result = effect.Sepia(result)
 	case "sharpen":
-		result = effect.Sharpen(img)
+		result = effect.Sharpen(result)
 	case "sobale":
-		result = effect.Sobel(img)
+		result = effect.Sobel(result)
+
+	case "brightness":
+		result = adjust.Brightness(result, float64(m.effectRange))
+	case "contrast":
+		result = adjust.Contrast(result, float64(m.effectRange))
+	case "gamma":
+		result = adjust.Gamma(result, float64(m.effectRange))
+	case "hue":
+		result = adjust.Hue(result, int(m.effectRange))
+	case "saturation":
+		result = adjust.Saturation(result, float64(m.effectRange))
+	case "threshold":
+		result = segment.Threshold(result, uint8(m.effectRange))
+	case "flipH":
+		result = transform.FlipH(result)
+	case "flipV":
+		result = transform.FlipV(result)
+	case "shearH":
+		result = transform.ShearH(result, float64(m.effectRange))
+	case "shearV":
+		result = transform.ShearV(result, float64(m.effectRange))
+
+	case "noiseUniformColored":
+		imgBounds := result.Bounds()
+		noise := noise.Generate(imgBounds.Dx(), imgBounds.Dy(), &noise.Options{Monochrome: false, NoiseFn: noise.Uniform})
+		result = blend.Overlay(noise, result)
+	case "noiseBinaryMonochrome":
+		imgBounds := result.Bounds()
+		noise := noise.Generate(imgBounds.Dx(), imgBounds.Dy(), &noise.Options{Monochrome: true, NoiseFn: noise.Binary})
+		result = blend.Opacity(noise, result, 0.5)
+	case "noiseGaussianMonochrome":
+		imgBounds := result.Bounds()
+		noise := noise.Generate(imgBounds.Dx(), imgBounds.Dy(), &noise.Options{Monochrome: true, NoiseFn: noise.Gaussian})
+		result = blend.Overlay(noise, result)
+	case "noisePerlin":
+		imgBounds := result.Bounds()
+		noise := noise.GeneratePerlin(imgBounds.Dx(), imgBounds.Dy(), m.effectRange)
+		result = blend.Overlay(noise, result)
 	}
 
 	return result
 }
 
-func resizeImg(img image.Image, newWidth int) image.Image {
+func resizeImg(img image.Image, newWidth int) (int, int) {
 	imgBounds := img.Bounds()
 	aspectRatio := float64(newWidth) / float64(imgBounds.Dx())
 	newHeight := int(float64(imgBounds.Dy()) * aspectRatio)
 
-	return transform.Resize(img, newWidth, newHeight, transform.Linear)
+	return newWidth, newHeight
 }
 
 func changeAttribute(content js.Value, attribute string, value string) {
