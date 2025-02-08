@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/jpeg"
 	"image/png"
 	"math"
@@ -20,6 +21,9 @@ import (
 	"github.com/anthonynsimon/bild/noise"
 	"github.com/anthonynsimon/bild/segment"
 	"github.com/anthonynsimon/bild/transform"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 )
 
 type model struct {
@@ -286,6 +290,7 @@ func (m *model) asciiGenerator(img image.Image) {
 
 			if m.checkColor {
 				r, g, b, _ := px.RGBA()
+
 				colorCSS := fmt.Sprintf("rgb(%d,%d,%d)", r>>8, g>>8, b>>8)
 				builder.WriteString(fmt.Sprintf(`<i style="color:%s">%c</i>`, colorCSS, density[int(charIndex)]))
 			} else {
@@ -295,9 +300,55 @@ func (m *model) asciiGenerator(img image.Image) {
 		}
 		builder.WriteRune('\n')
 	}
-
 	asciiDiv := m.document.Call("getElementById", "ascii-art")
 	asciiDiv.Set("innerHTML", builder.String())
+
+}
+
+func (m *model) asciiGeneratorCanva(img image.Image) {
+	density := []rune(m.asciiChars)
+
+	width, height := resizeImg(img, m.imageWidth)
+	resul := transform.Resize(img, width, height, transform.Linear)
+	bounds := resul.Bounds()
+
+	imageTeste := image.NewRGBA(image.Rect(0, 0, bounds.Max.X*10, bounds.Max.Y*15))
+	draw.Draw(imageTeste, imageTeste.Bounds(), &image.Uniform{color.Transparent}, image.Point{}, draw.Src)
+
+	d := &font.Drawer{
+		Dst:  imageTeste,
+		Face: basicfont.Face7x13,
+	}
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			px := resul.At(x, y)
+			gr := color.GrayModel.Convert(px)
+			gray := gr.(color.Gray)
+
+			intensity := float64(gray.Y) / 255.0
+			charIndex := math.Floor(float64(len(density)-1) * intensity)
+
+			d.Dot = fixed.Point26_6{
+				X: fixed.I(x * 10),
+				Y: fixed.I(y * 15),
+			}
+
+			if m.checkColor {
+				r, g, b, _ := px.RGBA()
+
+				d.Src = image.NewUniform(color.RGBA{uint8(r), uint8(g), uint8(b), 255})
+			} else {
+				d.Src = image.NewUniform(color.White)
+			}
+
+			d.DrawString(string(density[int(charIndex)]))
+
+		}
+	}
+
+	m.imageEffectGenerator(imageTeste)
+
 }
 
 func (m model) applyEffects(img image.Image) image.Image {
