@@ -8,8 +8,8 @@ live version at [Demo](https://image-effects-lac.vercel.app/).
 Clone the project
 
 ```bash
-git clone https://github.com/BrunoPoiano/image-effects.git
-cd image-effects
+git clone git@github.com:BrunoPoiano/ascii-image-generator.git
+cd ascii-image-generator
 ```
 ### To run locally
 
