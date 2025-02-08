@@ -223,7 +223,7 @@ func (m *model) changeImage() {
 		onLoad.Release()
 
 		inputZoomRangeDiv := m.document.Call("getElementById", "ascii-div")
-		imageDiv := m.document.Call("getElementById", "img")
+		imageDiv := m.document.Call("getElementById", "canvas")
 		asciiDiv := m.document.Call("getElementById", "ascii-art")
 
 		changeAttribute(inputZoomRangeDiv, "data-visible", strconv.FormatBool(m.checkAscii))
@@ -241,11 +241,8 @@ func (m *model) imageEffectGenerator(img image.Image) {
 
 	var buf bytes.Buffer
 	png.Encode(&buf, img)
-
 	data := buf.Bytes()
-
 	uint8Array := m.global.Get("Uint8Array").New(len(data))
-
 	js.CopyBytesToJS(uint8Array, data)
 
 	array := m.global.Get("Array").New(1)
@@ -255,8 +252,19 @@ func (m *model) imageEffectGenerator(img image.Image) {
 	blobOpt.Set("type", "image/png")
 	blob := m.global.Get("Blob").New(array, blobOpt)
 
-	url := m.global.Get("URL").Call("createObjectURL", blob)
-	m.document.Call("getElementById", "img").Set("src", url)
+	image := m.global.Get("Image").New()
+	image.Set("src", m.global.Get("URL").Call("createObjectURL", blob))
+
+	image.Call("addEventListener", "load", js.FuncOf(func(this js.Value, p []js.Value) interface{} {
+		canvas := m.document.Call("getElementById", "canvas")
+		drawImage := canvas.Call("getContext", "2d")
+
+		changeAttribute(canvas, "width", fmt.Sprintf("%d", image.Get("width").Int()))
+		changeAttribute(canvas, "height", fmt.Sprintf("%d", image.Get("height").Int()))
+
+		drawImage.Call("drawImage", image, 0, 0)
+		return nil
+	}))
 }
 
 func (m *model) asciiGenerator(img image.Image) {
@@ -361,6 +369,11 @@ func (m model) applyEffects(img image.Image) image.Image {
 	}
 
 	return result
+}
+
+func imageSize(img image.Image) (int, int) {
+	imgBounds := img.Bounds()
+	return imgBounds.Dx(), imgBounds.Dy()
 }
 
 func resizeImg(img image.Image, newWidth int) (int, int) {
