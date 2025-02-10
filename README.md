@@ -2,7 +2,7 @@
 
 Convert images into ASCII art using a web interface. Built using Go (Golang) and WebAssembly (WASM) to execute in the client's browser, providing a fast and efficient way to generate ASCII art from an image.
 
-live version at [Demo](https://image-effects-lac.vercel.app/).
+live version at [Demo](ascii-image-generator-two.vercel.app/).
 
 ## Install
 Clone the project
